@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICSQ Admin Dashboard - Logs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .filter-group input, .filter-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .logs-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .table-header {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .log-row {
+            padding: 12px 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+
+        .log-row:hover {
+            background: #f8f9fa;
+        }
+
+        .log-row:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .status-success {
+            color: #27ae60;
+            font-weight: 500;
+        }
+
+        .status-failure {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .top-actions, .top-users {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .top-actions h3, .top-users h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .action-item, .user-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .action-item:last-child, .user-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 ICSQ Admin Dashboard - Activity Logs</h1>
+            <div>
+                <button class="btn" onclick="refreshData()">🔄 Refresh</button>
+                <button class="btn" onclick="exportLogs()">📊 Export CSV</button>
+            </div>
+        </div>
+
+        <div id="message"></div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="todayLogs">-</div>
+                <div class="stat-label">Today's Logs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="loginCount">-</div>
+                <div class="stat-label">Today's Logins</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="errorCount">-</div>
+                <div class="stat-label">Today's Errors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalLogs">-</div>
+                <div class="stat-label">Total Logs</div>
+            </div>
+        </div>
+
+        <div class="top-actions">
+            <h3>🔥 Top Actions Today</h3>
+            <div id="topActions"></div>
+        </div>
+
+        <div class="top-users">
+            <h3>👥 Most Active Users</h3>
+            <div id="topUsers"></div>
+        </div>
+
+        <div class="controls">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Action Type:</label>
+                    <select id="actionFilter">
+                        <option value="">All Actions</option>
+                        <option value="LOGIN">Login</option>
+                        <option value="SURVEY_CREATED">Survey Created</option>
+                        <option value="SIPOC_CREATED">SIPOC Created</option>
+                        <option value="USER_CREATED">User Created</option>
+                        <option value="ANALYTICS_VIEWED">Analytics Viewed</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="SUCCESS">Success</option>
+                        <option value="FAILURE">Failure</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>User Email:</label>
+                    <input type="text" id="userEmailFilter" placeholder="Enter email">
+                </div>
+                <div class="filter-group">
+                    <label>Start Date:</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="filter-group">
+                    <label>End Date:</label>
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+            <button class="btn" onclick="applyFilters()">🔍 Apply Filters</button>
+            <button class="btn" onclick="clearFilters()">🗑️ Clear Filters</button>
+        </div>
+
+        <div class="logs-table">
+            <div class="table-header">
+                <div>Timestamp</div>
+                <div>User</div>
+                <div>Action</div>
+                <div>Status</div>
+                <div>IP Address</div>
+                <div>Response Time</div>
+                <div>Details</div>
+            </div>
+            <div id="logsContainer">
+                <div class="loading">Loading logs...</div>
+            </div>
+        </div>
+
+        <div class="pagination">
+            <button class="btn" onclick="previousPage()">← Previous</button>
+            <span id="pageInfo">Page 1</span>
+            <button class="btn" onclick="nextPage()">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentFilters = {};
+
+        // Load dashboard on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+        });
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/v1/logs/admin-dashboard', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        showMessage('Access denied. Only users with log viewing permission can access this dashboard.', 'error');
+                        return;
+                    }
+                    throw new Error('Failed to load dashboard');
+                }
+
+                const data = await response.json();
+                displayDashboard(data);
+            } catch (error) {
+                showMessage('Error loading dashboard: ' + error.message, 'error');
+            }
+        }
+
+        function displayDashboard(data) {
+            // Update statistics
+            document.getElementById('todayLogs').textContent = data.statistics.todayLogs;
+            document.getElementById('loginCount').textContent = data.statistics.loginCount;
+            document.getElementById('errorCount').textContent = data.statistics.errorCount;
+            document.getElementById('totalLogs').textContent = data.pagination.total;
+
+            // Update pagination
+            currentPage = data.pagination.page;
+            totalPages = data.pagination.totalPages;
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+
+            // Display top actions
+            const topActionsHtml = data.statistics.topActions.map(action => 
+                `<div class="action-item">
+                    <span>${action._id}</span>
+                    <span>${action.count}</span>
+                </div>`
+            ).join('');
+            document.getElementById('topActions').innerHTML = topActionsHtml;
+
+            // Display top users
+            const topUsersHtml = data.statistics.topUsers.map(user => 
+                `<div class="user-item">
+                    <span>${user.userName || user.userEmail}</span>
+                    <span>${user.count} actions</span>
+                </div>`
+            ).join('');
+            document.getElementById('topUsers').innerHTML = topUsersHtml;
+
+            // Display logs
+            displayLogs(data.logs);
+        }
+
+        function displayLogs(logs) {
+            const container = document.getElementById('logsContainer');
+            
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="loading">No logs found</div>';
+                return;
+            }
+
+            const logsHtml = logs.map(log => `
+                <div class="log-row">
+                    <div>${new Date(log.createdAt).toLocaleString()}</div>
+                    <div>${log.userName || log.userEmail || 'System'}</div>
+                    <div>${log.action}</div>
+                    <div class="status-${log.status.toLowerCase()}">${log.status}</div>
+                    <div>${log.ipAddress || '-'}</div>
+                    <div>${log.responseTime ? log.responseTime + 'ms' : '-'}</div>
+                    <div>${log.requestUrl || '-'}</div>
+                </div>
+            `).join('');
+
+            container.innerHTML = logsHtml;
+        }
+
+        function applyFilters() {
+            currentFilters = {
+                action: document.getElementById('actionFilter').value,
+                status: document.getElementById('statusFilter').value,
+                userEmail: document.getElementById('userEmailFilter').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                page: 1
+            };
+
+            loadFilteredLogs();
+        }
+
+        function clearFilters() {
+            document.getElementById('actionFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('userEmailFilter').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            
+            currentFilters = {};
+            currentPage = 1;
+            loadDashboard();
+        }
+
+        async function loadFilteredLogs() {
+            try {
+                const params = new URLSearchParams(currentFilters);
+                const response = await fetch(`/api/v1/logs?${params}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load filtered logs');
+                }
+
+                const data = await response.json();
+                displayLogs(data.logs);
+                
+                // Update pagination
+                currentPage = data.page;
+                totalPages = data.totalPages;
+                document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+            } catch (error) {
+                showMessage('Error loading filtered logs: ' + error.message, 'error');
+            }
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                if (Object.keys(currentFilters).length > 0) {
+                    currentFilters.page = currentPage;
+                    loadFilteredLogs();
+                } else {
+                    loadDashboard();
+                }
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                if (Object.keys(currentFilters).length > 0) {
+                    currentFilters.page = currentPage;
+                    loadFilteredLogs();
+                } else {
+                    loadDashboard();
+                }
+            }
+        }
+
+        function refreshData() {
+            if (Object.keys(currentFilters).length > 0) {
+                loadFilteredLogs();
+            } else {
+                loadDashboard();
+            }
+        }
+
+        async function exportLogs() {
+            try {
+                const params = new URLSearchParams(currentFilters);
+                const response = await fetch(`/api/v1/logs/export?${params}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to export logs');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `logs_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showMessage('Logs exported successfully!', 'success');
+            } catch (error) {
+                showMessage('Error exporting logs: ' + error.message, 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(refreshData, 30000);
+    </script>
+</body>
+</html> 
